@@ -1,0 +1,14 @@
+import { useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { SlidersHorizontal } from 'lucide-react';
+import { apiRequest, mapCar } from '../services/api';
+import CarCard from '../components/CarCard';
+
+export default function Cars() {
+  const [params] = useSearchParams();
+  const [type,setType]=useState('All'); const [maxPrice,setMaxPrice]=useState('5000'); const [sort,setSort]=useState('newest');
+  const [cars,setCars]=useState([]); const [loading,setLoading]=useState(true); const [error,setError]=useState('');
+  const location=params.get('location')||'';
+  useEffect(()=>{let active=true;setLoading(true);setError('');const query=new URLSearchParams();if(location)query.set('location',location);if(type!=='All')query.set('category',type);query.set('maxPrice',maxPrice);query.set('sort',sort);query.set('limit','50');apiRequest(`/cars?${query.toString()}`).then(data=>{if(active)setCars((data.cars||[]).map(mapCar));}).catch(err=>{if(active)setError(err.message);}).finally(()=>{if(active)setLoading(false);});return()=>{active=false;};},[location,type,maxPrice,sort]);
+  return <section className="section container page-section"><div className="page-title"><span className="eyebrow">EXPLORE THE FLEET</span><h1>Find your next ride</h1><p className="muted">Browse approved cars available for booking.</p></div><div className="filter-bar"><div className="filter-label"><SlidersHorizontal size={18}/> Filters</div><label>Car type<select value={type} onChange={e=>setType(e.target.value)}><option>All</option><option>SUV</option><option>Sedan</option><option>Hatchback</option><option>Luxury</option><option>Electric</option><option>Other</option></select></label><label>Max price / day<select value={maxPrice} onChange={e=>setMaxPrice(e.target.value)}><option value="1500">₹1,500</option><option value="2500">₹2,500</option><option value="3500">₹3,500</option><option value="5000">₹5,000</option><option value="10000">₹10,000</option></select></label><label>Sort by<select value={sort} onChange={e=>setSort(e.target.value)}><option value="newest">Newest</option><option value="price_low">Price: low to high</option><option value="price_high">Price: high to low</option></select></label></div><div className="results-line"><b>{cars.length} cars found</b>{location&&<span className="muted">Pickup city: {location}</span>}</div>{loading?<p className="muted">Loading cars from database...</p>:error?<div className="empty-state"><h3>Unable to load cars</h3><p>{error}. Check that your backend is running.</p></div>:cars.length?<div className="car-grid">{cars.map(car=><CarCard key={car.id} car={car}/>)}</div>:<div className="empty-state"><h3>No approved cars found</h3><p>Try changing your filters or check again after an owner lists a car and admin approves it.</p></div>}</section>;
+}

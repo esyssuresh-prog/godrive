@@ -1,0 +1,12 @@
+import { useEffect, useState } from 'react';
+import { useParams, Link, Navigate } from 'react-router-dom';
+import { MapPin, Users, Settings2, Fuel, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { apiRequest, mapCar } from '../services/api';
+
+export default function CarDetails() {
+  const {id}=useParams(); const [car,setCar]=useState(null); const [loading,setLoading]=useState(true); const [error,setError]=useState('');
+  useEffect(()=>{let active=true;apiRequest(`/cars/${id}`).then(data=>{if(active)setCar(mapCar(data.car));}).catch(err=>{if(active)setError(err.message);}).finally(()=>{if(active)setLoading(false);});return()=>{active=false;};},[id]);
+  if(loading)return <section className="section container"><p>Loading car details...</p></section>;
+  if(error||!car)return <Navigate to="/cars" replace/>;
+  return <section className="section container page-section"><div className="breadcrumbs"><Link to="/">Home</Link> / <Link to="/cars">Cars</Link> / {car.name}</div><div className="details-layout"><div className="details-main"><img className="details-image" src={car.image} alt={car.name}/><div className="details-heading"><div><span className="eyebrow">{car.type.toUpperCase()}</span><h1>{car.name}</h1><p className="muted"><MapPin size={16}/>{car.location} · Hosted by {car.owner}</p></div></div><div className="spec-grid"><div><Users/><b>{car.seats} seats</b><small>Capacity</small></div><div><Settings2/><b>{car.transmission}</b><small>Transmission</small></div><div><Fuel/><b>{car.fuel}</b><small>Fuel type</small></div></div><div className="detail-section"><h2>About this car</h2><p>{car.description||'Contact the owner for more information about this vehicle.'}</p></div><div className="detail-section"><h2>Included with your trip</h2><div className="included-grid"><span><CheckCircle2/> Clean vehicle</span><span><CheckCircle2/> Verified owner</span><span><CheckCircle2/> Booking support</span><span><CheckCircle2/> Clear pricing</span></div></div></div><aside className="booking-card"><span className="muted">Starting from</span><div className="price-big">₹{car.price.toLocaleString('en-IN')}<small> / day</small></div><p className="muted">Final rental amount is calculated by the server based on your dates.</p><Link to={`/book/${car.id}`} className="btn btn-primary btn-block">Continue to booking</Link><div className="secure-note"><ShieldCheck size={17}/> Secure booking experience</div></aside></div></section>;
+}
